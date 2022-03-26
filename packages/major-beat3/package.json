@@ -1,0 +1,17 @@
+{
+  "name": "@teampink/major-beat3",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Major Beat 3",
+  "main": "index.js",
+  "scripts": {
+    "start": "echo \"Welcome!\n.\n.\nGood Bye!\""
+  },
+  "keywords": [
+    "class",
+    "project",
+    "interactive",
+    "installations"
+  ],
+  "author": "ID 6763 - Team Pink (Spring 2022)"
+}
