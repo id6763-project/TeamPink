@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "description": "The core interaction molecule being used for this project.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "start": "echo \"Welcome!\n.\n.\nGood Bye!\""
   },
