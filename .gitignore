@@ -105,3 +105,6 @@ dist
 
 # Generated lib directory
 **/lib/*
+
+#banish .DS_Store
+.DS_Store
