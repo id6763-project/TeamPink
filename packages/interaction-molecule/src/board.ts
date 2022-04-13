@@ -1,27 +1,42 @@
 import { BoardOption, Board } from 'johnny-five';
-import { EmptyComponent } from './component';
+import { BaseComponent } from './component';
 
 export interface InstallationOptions {
   boardOptions?: BoardOption;
-  components: {
-    [name: string]: EmptyComponent;
-  };
 }
 
-class InteractiveInstallationBoard<O extends InstallationOptions> {
+export interface Installation {
+  name: string;
+  description: string;
+
+  connect();
+
+  start();
+
+  stop();
+
+  restart();
+}
+
+export class InstallationArduinoBoard<O extends InstallationOptions> {
   j5board: Board;
+  components: BaseComponent[];
 
   constructor(private options: O) {
     this.j5board = new Board(options.boardOptions);
   }
 
-  getComponent = <C extends EmptyComponent>(name: string): C => {
-    return this.options.components[name] as C;
+  async connect(): Promise<void> {
+    return new Promise((resolve) => this.j5board.on('ready', () => resolve()));
+  }
+
+  addComponents(...components: BaseComponent[]) {
+    this.components = [...(this.components || []), ...components];
+
+    components.forEach((component) => component.bind(this));
+  }
+
+  getComponent = <C extends BaseComponent>(name: string): C => {
+    return this.components[name] as C;
   };
 }
-
-export const connectToArduinoBoard = <O extends InstallationOptions>(
-  options: O
-) => {
-  return new InteractiveInstallationBoard(options);
-};
