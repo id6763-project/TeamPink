@@ -31,6 +31,7 @@ export class InstallationArduinoBoard<O extends InstallationOptions> {
   }
 
   addComponents(...components: BaseComponent[]) {
+    console.log('Adding', components);
     this.components = [...(this.components || []), ...components];
 
     components.forEach((component) => component.bind(this));

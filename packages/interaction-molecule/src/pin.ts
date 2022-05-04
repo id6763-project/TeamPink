@@ -15,6 +15,8 @@ export enum DigitalPin {
   PIN_13 = 13,
 }
 
+export type AnalogRGBLedStripPin = DigitalPin;
+
 export enum AnalogPin {
   A0 = 0,
   A1 = 1,

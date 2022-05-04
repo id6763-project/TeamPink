@@ -16,7 +16,6 @@
  */
 
 import {
-  AnalogPin,
   AnalogRGBLedStrip,
   Button,
   DigitalPin,
@@ -25,213 +24,149 @@ import {
   InstallationOptions,
 } from '@teampink/interaction-molecule';
 import { Bone } from './bone';
+import Player from 'play-sound';
+import { Pin } from 'johnny-five';
 
-interface MajorBeat1Options extends InstallationOptions {}
+import fs from 'fs';
+
+console.log('Player', Player);
+export interface MajorBeat1Options extends InstallationOptions {}
 
 class MajorBeat1 implements Installation {
   name: 'Major Beat 1';
   description: 'In this installation, the participant drags a peg to a broken bone to fix it.';
+  selectedBone = 0;
+  player = new Player();
+  currentBone: Bone;
 
   options: MajorBeat1Options = {
     boardOptions: {
-      port: '/dev/cu.usbmodem14101',
+      // port: '/dev/cu.usbmodem14101',
     },
   };
   board: InstallationArduinoBoard<MajorBeat1Options>;
 
-  // ledStz
+  // ledStrip = new AnalogRGBLedStrip({
+  //   pins: {
+  //     r: DigitalPin.PIN_3_PWM,
+  //     g: DigitalPin.PIN_5_PWM,
+  //     b: DigitalPin.PIN_6_PWM,
+  //   },
+  // });
   heartButton = new Button({
-    pin: DigitalPin.PIN_5_PWM,
+    pin: DigitalPin.PIN_2,
   });
-  bone1 = new Bone({
-    pins: {
-      g: DigitalPin.PIN_2,
-      r: DigitalPin.PIN_3_PWM,
-      proximitySensor: AnalogPin.A0,
-    },
-  });
-  bone2 = new Bone({
-    pins: {
-      g: DigitalPin.PIN_5_PWM,
-      r: DigitalPin.PIN_6_PWM,
-      proximitySensor: AnalogPin.A1,
-    },
-  });
-  bone3 = new Bone({
-    pins: {
-      g: DigitalPin.PIN_8,
-      r: DigitalPin.PIN_9_PWM,
-      proximitySensor: AnalogPin.A2,
-    },
-  });
+  bones = [
+    new Bone({
+      pins: {
+        g: DigitalPin.PIN_4,
+        r: DigitalPin.PIN_7,
+        reedSwitch: DigitalPin.PIN_3_PWM,
+      },
+    }),
+    new Bone({
+      pins: {
+        g: DigitalPin.PIN_9_PWM,
+        r: DigitalPin.PIN_10_PWM,
+        reedSwitch: DigitalPin.PIN_11_PWM,
+      },
+    }),
+    new Bone({
+      pins: {
+        g: DigitalPin.PIN_12,
+        r: DigitalPin.PIN_13,
+        reedSwitch: DigitalPin.PIN_8,
+      },
+    }),
+  ];
 
   constructor() {
     this.board = new InstallationArduinoBoard(this.options);
   }
 
   async connect() {
+    console.log('Attempting to connect');
     return this.board.connect().then(() => {
-      this.board.addComponents(
-        // this.ledStrip,
-        this.heartButton,
-        this.bone1,
-        this.bone2,
-        this.bone3
-      );
+      console.log('Connected');
+      // this.board.addComponents(this.ledStrip, this.heartButton, ...this.bones);
+      this.board.addComponents(this.heartButton, ...this.bones);
     });
+  }
+
+  private activateNextBone() {
+    this.selectedBone = Math.round(Math.random() * 10) % this.bones.length;
+    this.currentBone = this.bones[this.selectedBone];
+    this.currentBone.start();
+  }
+
+  private makeCurrentBoneActive() {
+    const activateNextBone = () => {
+      this.currentBone.on('complete', () => {
+        console.log('Completed');
+        this.currentBone.green();
+
+        this.player.play('./packages/audio-files/7.mp3', (err) => {
+          this.player.play('./packages/audio-files/8.mp3', (err) => {
+            console.log('Finished Playing', err);
+
+            setTimeout(() => {
+              this.currentBone.makeInactive();
+            }, 1000);
+          });
+        });
+      });
+
+      this.selectedBone = (this.selectedBone + 1) % this.bones.length;
+    };
+
+    activateNextBone();
   }
 
   async start() {
-    let inId;
+    // this.ledStrip.turnOn();
+    // this.ledStrip.setColor(255, 255, 255);
 
-    console.log('Starting');
-    this.heartButton.on('press', () => {
-      console.log('HeartButton Pressed');
+    this.player.play('./packages/audio-files/1.mp3', (err) => {
+      this.player.play('./packages/audio-files/2.mp3', (err) => {
+        // Turn on LED strip
+        this.player.play('./packages/audio-files/3.mp3', (err) => {
+          this.player.play('./packages/audio-files/4.mp3', (err) => {
+            this.heartButton.on('press', () => {
+              console.log('Heart Button pressed');
 
-      if (inId) {
-        clearInterval(inId);
-        this.bone1.makeInactive();
-        return;
-      }
+              this.activateNextBone();
 
-      let flag = true;
+              // const files = fs.readdirSync('./');
 
-      inId = setInterval(() => {
-        console.log('interval');
-        if (flag) {
-          console.log('red');
-          this.bone1.red();
-        } else {
-          console.log('green');
-          this.bone1.green();
-        }
-
-        flag = !flag;
-      }, 500);
+              // console.log('Curr FIles', files);
+              // setTimeout(() => this.startBones(), 2000);
+              this.player.play('./packages/audio-files/5.mp3', (err) => {
+                this.player.play('./packages/audio-files/6.mp3', (err) => {
+                  this.makeCurrentBoneActive();
+                });
+              });
+            });
+          });
+        });
+      });
     });
   }
 
-  async stop() {}
+  async stop() {
+    this.bones.forEach((bone) => bone.makeInactive());
+    // this.ledStrip.turnOff();
+  }
 
   async restart() {}
 }
 
-export const installation = new MajorBeat1();
+const mb1 = new MajorBeat1();
 
-installation
-  .connect()
-  .then(() => installation.start())
-  .then(() => console.log('Started'));
+mb1.connect().then(() => {
+  console.log('Connected outer');
+  mb1.start().then(() => {
+    console.log('Installation Started');
+  });
+});
 
-// async function start() {
-// const board = await connectToArduinoBoard(options);
-// const components = {
-// }
-
-// board.addComponents(components);
-//
-
-// console.log('Board Ready');
-
-// const sensor = new Sensor({ pin: 0 });
-// sensor.on('change', (data) => console.log('Sensor Change', data));
-// sensor.on('data', (data) => console.log('Sensor Data', data));
-
-// const l = new Led({ pin: 5 });
-// l.turnOn();
-
-// const l2 = new Led({ pin: 2 });
-// l2.turnOn();
-
-// board.getComponent<AnalogRGBLedStrip>('ledStrip').setColor(255, 255, 255);
-
-// const bones = [
-//   board.getComponent<Bone>('bone1'),
-//   board.getComponent<Bone>('bone2'),
-//   board.getComponent<Bone>('bone3'),
-// ];
-
-// board.getComponent<Button>('heartButton').on('press', () => {
-//   console.log('Button Pressed');
-// Trigger Audio
-
-// Select Random Bone.
-// function resetBones() {
-//   bones.forEach((bone) => bone.makeInactive());
-
-//   const randomBone = (Math.random() * 10) % bones.length;
-
-//   bones[randomBone].red();
-//   bones[randomBone].on('complete', () => {
-//     bones[randomBone].green();
-
-//     setTimeout(() => resetBones(), 2000);
-//   });
-// }
-
-// resetBones();
-
-//     components.bone1.red();
-
-//     components.bone1.proximitySensor.on('change', () =>
-//       components.bone1.green()
-//     );
-//   });
-// }
-
-// start();
-
-// import {
-//   InstallationArduinoBoard,
-//   Led,
-//   DigitalPin,
-//   Button,
-//   AnalogPin,
-// } from '@teampink/interaction-molecule';
-
-// const board1 = new InstallationArduinoBoard({
-//   boardOptions: {
-//     port: '/dev/cu.usbmodem14101',
-//   },
-// });
-
-// board1.connect().then(() => {
-//   console.log('Board 1 Connected');
-
-//   const greenLed = new Led({ pin: DigitalPin.PIN_4 });
-//   const button = new Button({ pin: DigitalPin.PIN_5_PWM });
-//   board1.addComponents(greenLed, button);
-
-//   button.on('press', () => console.log('Board 1 Button Pressed'));
-
-//   greenLed.turnOn();
-
-//   setTimeout(() => {
-//     greenLed.turnOff();
-//   }, 2000);
-// });
-
-// // setTimeout(() => {
-// const board2 = new InstallationArduinoBoard({
-//   boardOptions: {
-//     port: '/dev/cu.usbmodem14201',
-//   },
-// });
-
-// board2.connect().then(() => {
-//   console.log('Board 2 Connected');
-
-//   const redLed = new Led({ pin: DigitalPin.PIN_2 });
-//   const button = new Button({ pin: DigitalPin.PIN_3_PWM });
-
-//   board2.addComponents(redLed, button);
-
-//   button.on('press', () => console.log('Board 2 Button Pressed'));
-
-//   redLed.turnOn();
-
-//   setTimeout(() => {
-//     redLed.turnOff();
-//   }, 2000);
-// });
-// // }, 3000);
+export default mb1;

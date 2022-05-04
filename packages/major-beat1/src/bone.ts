@@ -1,9 +1,9 @@
 import {
-  AnalogPin,
-  Component,
+  // AnalogPin,
+  EventBasedComponent,
   DigitalPin,
   Led,
-  Sensor,
+  ReedSwitch,
 } from '@teampink/interaction-molecule';
 
 export type BoneState = 'complete' | 'incomplete' | 'n/a';
@@ -16,13 +16,13 @@ export interface BoneOptions {
   pins: {
     r: DigitalPin;
     g: DigitalPin;
-    proximitySensor: AnalogPin;
+    reedSwitch: DigitalPin;
   };
 }
-export class Bone implements Component {
+export class Bone implements EventBasedComponent {
   gLed: Led;
   rLed: Led;
-  proximitySensor: Sensor;
+  reedSwitch: ReedSwitch;
 
   constructor(private options: BoneOptions) {}
 
@@ -30,9 +30,7 @@ export class Bone implements Component {
     if (!this.gLed) {
       this.gLed = new Led({ pin: this.options.pins.g });
       this.rLed = new Led({ pin: this.options.pins.r });
-      this.proximitySensor = new Sensor({
-        pin: this.options.pins.proximitySensor,
-      });
+      this.reedSwitch = new ReedSwitch({ pin: this.options.pins.reedSwitch });
     }
   }
 
@@ -40,12 +38,18 @@ export class Bone implements Component {
     this.initComponent();
     this.gLed.bind(board);
     this.rLed.bind(board);
-    this.proximitySensor.bind(board);
+    this.reedSwitch.bind(board);
   }
 
   makeInactive() {
     this.initComponent();
     this.rLed.turnOff();
+    this.gLed.turnOff();
+  }
+
+  start() {
+    this.initComponent();
+    this.rLed.turnOn();
     this.gLed.turnOff();
   }
 
@@ -64,9 +68,10 @@ export class Bone implements Component {
   on(event: BoneState, callback: (data: BoneData) => void) {
     this.initComponent();
     if (event === 'complete') {
-      this.proximitySensor.on('data', () =>
-        callback({ state: 'complete', status: 'active' })
-      );
+      this.reedSwitch.on('close', () => {
+        console.log('Reed Switch Closed');
+        callback({ state: 'complete', status: 'active' });
+      });
     }
   }
 }

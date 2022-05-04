@@ -1,0 +1,12 @@
+{
+  "name": "@teampink/audio-files",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "http-server . --cors"
+  },
+  "dependencies": {
+    "http-server": "^14.1.0"
+  }
+}

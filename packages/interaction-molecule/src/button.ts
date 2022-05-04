@@ -1,6 +1,6 @@
 import { Button as JFButton } from 'johnny-five';
 import { InstallationOptions, InstallationArduinoBoard } from './board';
-import { Component } from './component';
+import { EventBasedComponent } from './component';
 import { DigitalPin } from './pin';
 
 export type ButtonState = 'hold' | 'down' | 'press' | 'up' | 'release';
@@ -13,7 +13,7 @@ export interface ButtonOptions {
   pin: DigitalPin;
 }
 
-export class Button implements Component {
+export class Button implements EventBasedComponent {
   private j5Button: JFButton;
 
   constructor(private options: ButtonOptions) {}
@@ -36,9 +36,9 @@ export class Button implements Component {
   }
 
   on(event: ButtonState, callback: (data: ButtonData) => void) {
-    this.initComponent(undefined);
-
-    this.j5Button.on(event, () => callback({ state: event } as ButtonData));
+    if (this.j5Button) {
+      this.j5Button.on(event, () => callback({ state: event } as ButtonData));
+    }
   }
 
   bind<O extends InstallationOptions>(board: InstallationArduinoBoard<O>) {

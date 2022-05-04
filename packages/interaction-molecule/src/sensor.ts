@@ -1,6 +1,6 @@
 import { Sensor as JFSensor } from 'johnny-five';
 import { InstallationOptions, InstallationArduinoBoard } from './board';
-import { Component } from './component';
+import { EventBasedComponent } from './component';
 import { AnalogPin } from './pin';
 
 export type SensorEvent = 'change' | 'data';
@@ -9,7 +9,7 @@ export type SensorOptions = {
   pin: AnalogPin;
 };
 
-export class Sensor implements Component {
+export class Sensor implements EventBasedComponent {
   private j5Sensor: JFSensor;
 
   constructor(private options: SensorOptions) {}
